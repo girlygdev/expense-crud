@@ -9,6 +9,7 @@ import TextField from '../components/General/TextField';
 import Title from '../components/General/Title';
 import { getFormattedDate } from '../util/date';
 import { deleteExpense, storeExpense, updateExpense } from '../util/http';
+import LoadingOverlay from '../components/General/LoadingOverlay';
 
 const ManageExpenseScreen = ({ route, navigation }) => {
   const expenseContext = useContext(ExpensesContext);
@@ -26,6 +27,7 @@ const ManageExpenseScreen = ({ route, navigation }) => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(getFormattedDate(new Date()));
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     const currentExpense = expenses.find((expense) => expense.id == expenseId);
@@ -38,9 +40,13 @@ const ManageExpenseScreen = ({ route, navigation }) => {
   }, [expenseId]);
 
   const deleteHandler = async () => {
+    setIsSubmitting(true)
     contextDeleteExpense(expenseId);
     await deleteExpense(expenseId);
-    navigation.goBack();
+
+    setTimeout(() => {
+      navigation.goBack();
+    }, [500])
   };
 
   const cancelHandler = () => {
@@ -48,6 +54,7 @@ const ManageExpenseScreen = ({ route, navigation }) => {
   };
 
   const confirmHandler = () => {
+    setIsSubmitting(true)
     validateData();
   };
 
@@ -67,7 +74,9 @@ const ManageExpenseScreen = ({ route, navigation }) => {
       contextAddExpense({ id, ...expenseData });
     }
 
-    navigation.goBack();
+    setTimeout(() => {
+      navigation.goBack();
+    }, [200])
   };
 
   const validateData = () => {
@@ -83,6 +92,10 @@ const ManageExpenseScreen = ({ route, navigation }) => {
 
     submitData();
   };
+
+  if (isSubmitting) {
+    return <LoadingOverlay />
+  }
 
   return (
     <View style={styles.container}>
