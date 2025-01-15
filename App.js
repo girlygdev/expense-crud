@@ -1,20 +1,71 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ManageExpenseScreen from './src/screens/ManageExpenseScreen';
+import { GlobalStyles } from './src/constants/styles';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
+import ExpensesOverviewNavigatorScreen from './src/screens/ExpensesOverviewNavigatorScreen';
+import ExpensesContextProvider from './src/store/expenses-context';
+
+const Stack = createNativeStackNavigator();
+
+SplashScreen.preventAutoHideAsync();
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    poppins: require('./assets/fonts/Poppins-Regular.ttf'),
+    'poppins-light': require('./assets/fonts/Poppins-Light.ttf'),
+    'poppins-bold': require('./assets/fonts/Poppins-Bold.ttf'),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hide();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <>
+      <StatusBar style='light' />
+      
+      <ExpensesContextProvider>
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName='ExpensesOverview'
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: GlobalStyles.colors.primary.medium,
+              },
+              headerTintColor: GlobalStyles.colors.light,
+            }}
+          >
+            <Stack.Screen
+              name='ManageExpense'
+              component={ManageExpenseScreen}
+              options={({ route }) => {
+                return {
+                  title: `${route.params?.expenseId ? 'Edit' : 'Add'} Expense`,
+                  presentation: 'modal',
+                };
+              }}
+            />
+            <Stack.Screen
+              name='ExpensesOverview'
+              component={ExpensesOverviewNavigatorScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </ExpensesContextProvider>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
