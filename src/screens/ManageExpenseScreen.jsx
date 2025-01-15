@@ -8,29 +8,38 @@ import { ExpensesContext } from '../store/expenses-context';
 import TextField from '../components/General/TextField';
 import Title from '../components/General/Title';
 import { getFormattedDate } from '../util/date';
+import { deleteExpense, storeExpense, updateExpense } from '../util/http';
 
 const ManageExpenseScreen = ({ route, navigation }) => {
   const expenseContext = useContext(ExpensesContext);
-  const { expenses, addExpense, deleteExpense, updateExpense } = expenseContext;
+  const {
+    expenses,
+    addExpense: contextAddExpense,
+    deleteExpense: contextDeleteExpense,
+    updateExpense: contextUpdateExpense,
+  } = expenseContext;
 
   const expenseId = route.params?.expenseId;
   const isEditing = !!expenseId;
 
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState(getFormattedDate(new Date()));
 
   useEffect(() => {
     const currentExpense = expenses.find((expense) => expense.id == expenseId);
     if (currentExpense) {
+      setTitle(currentExpense.title);
       setDescription(currentExpense.description);
       setAmount(currentExpense.amount.toString());
       setDate(getFormattedDate(currentExpense.date));
     }
   }, [expenseId]);
 
-  const deleteHandler = () => {
-    deleteExpense(expenseId);
+  const deleteHandler = async () => {
+    contextDeleteExpense(expenseId);
+    await deleteExpense(expenseId);
     navigation.goBack();
   };
 
@@ -39,51 +48,62 @@ const ManageExpenseScreen = ({ route, navigation }) => {
   };
 
   const confirmHandler = () => {
-    validateData()
+    validateData();
   };
 
-  const submitData = () => {
+  const submitData = async () => {
+    const expenseData = {
+      title,
+      description,
+      amount: parseFloat(amount),
+      date: new Date(date),
+    };
+
     if (isEditing) {
-      updateExpense(expenseId, {
-        description,
-        amount: parseFloat(amount),
-        date: new Date(date),
-      });
+      contextUpdateExpense(expenseId, expenseData);
+      await updateExpense(expenseId, expenseData);
     } else {
-      addExpense({
-        description,
-        amount: parseFloat(amount),
-        date: new Date(),
-      });
+      const id = await storeExpense(expenseData);
+      contextAddExpense({ id, ...expenseData });
     }
 
     navigation.goBack();
-  }
+  };
 
   const validateData = () => {
-    console.log(date.toString())
+    const titleIsValid = title.trim().length > 0;
     const amountIsValid = !isNaN(amount) && parseFloat(amount) > 0;
-    const dateIsValid = date.toString() !== 'Invalid Date' && date.toString().length > 0;
-    const descriptionIsValid = description.trim().length > 0
+    const dateIsValid =
+      date.toString() !== 'Invalid Date' && date.toString().length > 0;
 
-    if (!amountIsValid || !dateIsValid || !descriptionIsValid) {
-      Alert.alert('Invalid input', 'Please check your entered values.')
-      return false
+    if (!titleIsValid || !amountIsValid || !dateIsValid) {
+      Alert.alert('Invalid input', 'Please check your entered values.');
+      return false;
     }
 
-    submitData()
-  }
+    submitData();
+  };
 
   return (
     <View style={styles.container}>
       <Title>Your Expense</Title>
       <View style={styles.fieldContainer}>
         <TextField
+          label={'Title'}
+          options={{
+            onChangeText: setTitle,
+            value: title,
+            placeholder: 'Title'
+          }}
+        />
+
+        <TextField
           label='Amount'
           options={{
             onChangeText: setAmount,
             value: amount,
             keyboardType: 'decimal-pad',
+            placeholder: '0.00'
           }}
         />
 
@@ -99,8 +119,6 @@ const ManageExpenseScreen = ({ route, navigation }) => {
 
         <TextField
           label={'Description'}
-          onChangeText={setDescription}
-          value={description}
           options={{
             onChangeText: setDescription,
             value: description,

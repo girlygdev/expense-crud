@@ -12,7 +12,7 @@ const ExpenseListItem = ({ expense, onPress }) => {
     >
       <View style={styles.container}>
         <View style={styles.labelContainer}>
-          <Text style={styles.text}>{expense.description}</Text>
+          <Text style={styles.text}>{expense.title}</Text>
           <Text style={styles.text}>{getFormattedDate(expense.date)}</Text>
         </View>
 

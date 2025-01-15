@@ -1,48 +1,17 @@
-import { createContext, useReducer, useState } from 'react';
-import uuid from 'react-native-uuid';
-
-const DUMMYDATA = [
-  {
-    id: 'e1',
-    description: 'Shoes',
-    amount: 59.99,
-    date: new Date('2025-01-12'),
-  },
-  {
-    id: 'e2',
-    description: 'Shirt',
-    amount: 12.99,
-    date: new Date('2025-01-01'),
-  },
-  {
-    id: 'e3',
-    description: 'Trousers',
-    amount: 39.5,
-    date: new Date('2025-01-02'),
-  },
-  {
-    id: 'e4',
-    description: 'Socks',
-    amount: 9.99,
-    date: new Date('2025-01-03'),
-  },
-];
+import { createContext, useReducer } from 'react';
 
 export const ExpensesContext = createContext({
   expenses: [],
-  addExpense: ({ description, amount, date }) => {},
-  updateExpense: (id, { description, amount, date }) => {},
+  addExpense: ({ title, description, amount, date }) => {},
+  updateExpense: (id, { title, description, amount, date }) => {},
   deleteExpense: (id) => {},
+  setExpenses: ([]) => {}
 });
 
 const expensesReducer = (state, action) => {
   switch (action.type) {
     case 'add':
-      const newExpense = {
-        id: uuid.v4(),
-        ...action.payload,
-      };
-      return [...state, newExpense];
+      return [...state, action.payload];
 
     case 'update':
       const currExpenseId = state.findIndex(
@@ -57,13 +26,17 @@ const expensesReducer = (state, action) => {
     case 'delete':
       return state.filter((currExpense) => currExpense.id !== action.payload);
 
+    case 'set': 
+      const inverted = action.payload.reverse()
+      return inverted
+
     default:
       return state;
   }
 };
 
 const ExpensesContextProvider = ({ children }) => {
-  const [expensesState, dispatch] = useReducer(expensesReducer, DUMMYDATA);
+  const [expensesState, dispatch] = useReducer(expensesReducer, []);
 
   const addExpense = (data) => {
     dispatch({
@@ -89,11 +62,19 @@ const ExpensesContextProvider = ({ children }) => {
     });
   };
 
+  const setExpenses = (expenses) => {
+    dispatch({
+      type: 'set',
+      payload: expenses
+    });
+  }
+
   const value = {
     expenses: expensesState,
     addExpense,
     deleteExpense,
     updateExpense,
+    setExpenses
   };
 
   return (

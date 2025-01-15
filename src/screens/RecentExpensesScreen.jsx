@@ -1,18 +1,30 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import ExpensesOutput from '../components/Expenses/ExpensesOutput';
 import { ExpensesContext } from '../store/expenses-context';
 import { getDateMinusDays } from '../util/date';
+import { fetchExpenses } from '../util/http';
 
 const RecentExpensesScreen = () => {
   const expenseContext = useContext(ExpensesContext);
-  const expenses = expenseContext.expenses;
+  const { expenses, setExpenses } = expenseContext;
 
-  const recentExpenses = expenses.filter(expense => {
-    const today = new Date()
-    const date7DaysAgo = getDateMinusDays(today, 7)
+  useEffect(() => {
+    const getData = async () => {
+      const expenses = await fetchExpenses();
+      setExpenses(expenses);
+    };
 
-    return expense.date > date7DaysAgo
-  })
+    getData();
+  }, []);
+
+  const recentExpenses = useMemo(() => {
+    return expenses?.filter((expense) => {
+      const today = new Date();
+      const date7DaysAgo = getDateMinusDays(today, 7);
+
+      return expense.date > date7DaysAgo;
+    });
+  }, [expenses]);
 
   return (
     <ExpensesOutput
